@@ -43,3 +43,23 @@ export  const  getAllMatchPropertys=()=>{
     method:GET
   })
 }
+
+//操作数据 更新主标识
+export  const  operationPrimaryKey=(param)=>{
+  return request({
+    url:"/empi/config/system/EMPI_PRIMARY_KEY/update",
+    method:POST,
+    data:param
+  })
+}
+
+//更新纳排标准
+export  const  settingSelectionKeyOperation=(param)=>{
+  return request({
+    url:"/empi/config/match/select/setting",
+    method:POST,
+    data:param
+  })
+}
+
+
