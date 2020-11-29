@@ -27,6 +27,15 @@ export  const  getPrimaryKeyList=()=>{
     params:{code:"EMPI_PRIMARY_KEY"}
   })
 }
+//获取副标识
+
+export  const  getAllSecondaryKeyList=()=>{
+  return request({
+    url:"/empi/config/system/info",
+    method:GET,
+    params:{code:"EMPI_SECONDARY_KEY"}
+  })
+}
 /**
  * 获取所有纳排属性
  * @returns {AxiosPromise}
@@ -52,7 +61,14 @@ export  const  operationPrimaryKey=(param)=>{
     data:param
   })
 }
-
+//操作数据 更新副标识
+export  const  operatioSecondaryKey=(param)=>{
+  return request({
+    url:"/empi/config/system/EMPI_SECONDARY_KEY/update",
+    method:POST,
+    data:param
+  })
+}
 //更新纳排标准
 export  const  settingSelectionKeyOperation=(param)=>{
   return request({

@@ -59,9 +59,21 @@
                     <span>副标识</span>
                 </div>
                 <div class="key-second-div">
-                    <el-tag closable>身份证号</el-tag>
-                    <el-tag closable>医保卡号</el-tag>
-                    <el-button icon="el-icon-plus" circle></el-button>
+                    <template v-for="item in secondaryKeyList">
+                        <el-tag :key="item.code" @close="closeSecondaryKeyButton(item)"
+                                closable>
+                            {{item.value}}
+                        </el-tag>
+                    </template>
+                    <template>
+                        <el-button @click="secondaryKeydialogVisible=true" icon="el-icon-plus" circle></el-button>
+                    </template>
+                    <template v-if="secondaryKeyUpdateFlag">
+                        <el-button icon="el-icon-check" @click="submitSecondaryKeyUpdate"
+                                   circle type="success"></el-button>
+                        <el-button icon="el-icon-close" circle type="danger"
+                                   @click="cancelSecondaryKeyUpdate"></el-button>
+                    </template>
                 </div>
             </el-card>
         </div>
@@ -107,7 +119,7 @@
                     title="请选择纳排属性"
                     :visible.sync="selectionPropertydialogVisible"
                     width="30%"
-                    :before-close="cancleSelectPropertyDialog">
+                    :before-close="cancelSelectPropertyDialog">
                 <el-checkbox-group v-model="selectionPropertyChooseList">
                     <el-checkbox-button v-for="item in matchPropertys"
                                         class="div-el-checkbox-button"
@@ -115,7 +127,7 @@
                     </el-checkbox-button>
                 </el-checkbox-group>
                 <span slot="footer" class="dialog-footer">
-    <el-button @click="cancleSelectPropertyDialog">取 消</el-button>
+    <el-button @click="cancelSelectPropertyDialog">取 消</el-button>
     <el-button type="primary" @click="submitSelectPropertyDialog">确 定</el-button>
   </span>
             </el-dialog>
@@ -137,16 +149,33 @@
     <el-button type="primary" @click="submitUpdatePrimarykey">确 定</el-button>
   </span>
             </el-dialog>
+            <!--        副标识弹出框-->
+            <el-dialog
+                    title="请选择副标识"
+                    :visible.sync="secondaryKeydialogVisible"
+                    width="30%"
+                    :before-close="cancelSecondayKeyDialog">
+                <el-checkbox-group v-model="secondaryKeyChooseList">
+                    <el-checkbox-button v-for="item in matchPropertys"
+                                        class="div-el-checkbox-button"
+                                        :label="item.code" :key="item.code">{{item.name}}
+                    </el-checkbox-button>
+                </el-checkbox-group>
+                <span slot="footer" class="dialog-footer">
+    <el-button @click="cancelSecondayKeyDialog">取 消</el-button>
+    <el-button type="primary" @click="submitSecondayKeyDialog">确 定</el-button>
+  </span>
+            </el-dialog>
         </div>
     </div>
 </template>
 
 <script>
     import {
-        getAllMatchPropertys,
+        getAllMatchPropertys, getAllSecondaryKeyList,
         getAllSelectionProperty,
         getMatchFactorList,
-        getPrimaryKeyList, operationPrimaryKey, settingSelectionKeyOperation
+        getPrimaryKeyList, operationPrimaryKey, operatioSecondaryKey, settingSelectionKeyOperation
     } from "../../api/webApi";
 
     export default {
@@ -163,6 +192,11 @@
                 primaryKeydialogVisible: false,
                 primaryKeyRadio: null,
                 primaryKeyConfirmData: {},
+                //副标识
+                secondaryKeyList: [],
+                secondaryKeydialogVisible: false,//弹出窗
+                secondaryKeyUpdateFlag:false,
+                secondaryKeyChooseList:[],//筛选的副标识
                 matchPropertys: [],//属性列表
             }
         },
@@ -170,6 +204,7 @@
             this.getMatchFactorListInfo()
             this.getEmpiPrimaryKeyList()
             this.getEmpiSelectionPropertyList()
+            this.getSecondaryKeyList()
         },
         mounted() {
             if (this.matchPropertys.length === 0) {
@@ -208,7 +243,7 @@
             },
             /**取消和关闭弹出框的事件*/
 
-            cancleSelectPropertyDialog() {
+            cancelSelectPropertyDialog() {
                 this.$confirm('确认关闭，放弃纳排属性的修改？')
                     .then(() => {
                         //单选值为空
@@ -287,14 +322,14 @@
             },
 
             /**提交按钮更新筛选属性的操作*/
-            submitSelectionKeyOperation(){
+            submitSelectionKeyOperation() {
                 if (this.selectionPropertyList.length === 0) {
                     this.$message.warning("请至少添加一个纳排的属性")
-                }else{
+                } else {
                     this.$confirm("确定更新纳排的属性？").then(() => {
                         //提交数据
                         var paramData = []
-                        for (let i = 0; i <this.selectionPropertyList.length ; i++) {
+                        for (let i = 0; i < this.selectionPropertyList.length; i++) {
                             var matchProperty = {}
                             //生成matchProperty
                             matchProperty.code = this.selectionPropertyList[i].code
@@ -318,7 +353,6 @@
                     }).catch(() => {
                     });
                 }
-
             },
             //***************************纳排标准结束****************************************
 
@@ -406,7 +440,6 @@
                             console.error(e)
                         })
                         //
-
                     }).catch(() => {
                     });
                     //
@@ -460,6 +493,148 @@
                     });
             },
             //***************************主标识相关操作函数结束***************************************
+
+
+            //************************************副标识相关操作开始**************************************/
+            //获取副标识列表
+            getSecondaryKeyList() {
+                getAllSecondaryKeyList().then(res => {
+                    if (res.code === 200) {
+                        this.secondaryKeyList = res.data
+                    } else {
+                        console.error(res.data)
+                    }
+
+                }).catch(e => {
+                    console.error(e)
+                })
+            },
+            //关闭纳排标准的el-tag
+            closeSecondaryKeyButton(evt){
+                console.log(evt)
+                var code=evt.code
+                //
+                for (var i = 0; i < this.secondaryKeyList.length; i++) {
+                    if (this.secondaryKeyList[i].code === code) {
+                        this.secondaryKeyList.splice(i, 1)
+                        this.secondaryKeyUpdateFlag = true
+                    }
+                }
+            },
+            /**取消和关闭弹出框的事件*/
+            cancelSecondayKeyDialog(){
+                this.$confirm('确认关闭，放弃副标识的修改？')
+                    .then(() => {
+                        //选值为空
+                        this.secondaryKeyChooseList.splice(0)
+                        //关闭弹出窗口
+                        this.secondaryKeydialogVisible = false
+                    })
+                    .catch(() => {
+                    });
+            },
+            /**确认副标识弹出框操作*/
+            submitSecondayKeyDialog(){
+                if (this.secondaryKeyChooseList.length === 0) {
+                    this.$message.warning("请至少添加一个副标识再确认")
+                }else {
+                    //副标识
+                    //
+                    var selectionValue = [];
+                    this.secondaryKeyChooseList.forEach(
+                        element => {
+                            selectionValue.push("  [" + this.findItemFormMatchPropertys(element).name + "]  ");
+                        }
+                    )
+                    this.$confirm("确定添加副标识的属性:" + selectionValue.join("   ")).then(() => {
+                        //确定添加
+                        //更新数据 selectionPropertyList
+                        for (let i = 0; i < this.secondaryKeyChooseList.length; i++) {
+                            var code = this.secondaryKeyChooseList[i]
+                            var value = this.findItemFormMatchPropertys(this.secondaryKeyChooseList[i]).name
+                            //判断code是否已经存在selectionPropertyList
+                            // eslint-disable-next-line no-unused-vars
+                            var hasItem = false
+                            for (let j = 0; j < this.secondaryKeyList.length; j++) {
+                                if (this.secondaryKeyList[j].code === code) {
+                                    hasItem = true
+                                }
+                            }
+                            if (hasItem) {
+                                console.log(value + "已存在")
+                                this.$message.info(value + "副标识属性已存在,已忽略")
+                            } else {
+                                this.secondaryKeyList.push({'code': code, 'value': value})
+                                //更新标志
+                                this.secondaryKeyUpdateFlag = true
+                            }
+                        }
+                        //关闭弹出窗
+                        this.secondaryKeydialogVisible = false
+                        // console.log(this.selectionPropertyList)
+                        //清空已选择的数据
+                        this.secondaryKeyChooseList.splice(0)
+                    }).catch(() => {
+                        this.$message.info("用户取消操作")
+                    });
+                }
+            },
+            /**取消修改副标识属性*/
+            cancelSecondaryKeyUpdate(){
+                this.$confirm('此操作将放弃修改,是否继续', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.getSecondaryKeyList()
+                    this.secondaryKeyUpdateFlag = false
+                    this.$message({
+                        type: 'success',
+                        message: '取消修改副标识属性成功'
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消操作'
+                    });
+                });
+            },
+            /**提交按钮更新副标识属性*/
+            submitSecondaryKeyUpdate(){
+                if (this.secondaryKeyList.length === 0) {
+                    this.$message.warning("请至少添加一个副标识的属性")
+                } else {
+                    this.$confirm("确定更新副标识的属性？").then(() => {
+                        console.log("开始更新")
+                        //提交数据
+                        var paramData = []
+                        for (let i = 0; i < this.secondaryKeyList.length; i++) {
+                            var matchProperty = {}
+                            //生成matchProperty
+                            matchProperty.code = this.secondaryKeyList[i].code
+                            matchProperty.name = this.secondaryKeyList[i].value
+                            paramData.push(matchProperty)
+                        }
+                        //更新数据
+                        console.log(paramData)
+                        operatioSecondaryKey(paramData).then(res => {
+                            if (res.code === 200) {
+                                this.$message.success(res.data)
+                                this.secondaryKeyUpdateFlag = false
+                                this.getSecondaryKeyList()
+                            } else {
+                                this.$message.success(res.data)
+                            }
+                        }).catch(e => {
+                            console.error(e)
+                        })
+                        //
+                    }).catch(() => {
+                    });
+                }
+            },
+            //************************************副标识相关操作结束**************************************/
+
             //通过code获取值
             /**
              * 通过code获取属性值
