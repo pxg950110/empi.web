@@ -19,3 +19,27 @@ export const getMatchFactorList = () => {
     method: GET
   })
 }
+
+export  const  getPrimaryKeyList=()=>{
+  return request({
+    url:"/empi/config/system/info",
+    method:GET,
+    params:{code:"EMPI_PRIMARY_KEY"}
+  })
+}
+/**
+ * 获取所有纳排属性
+ * @returns {AxiosPromise}
+ */
+export  const getAllSelectionProperty=()=>{
+  return request({
+    url:"/empi/config/match/select/all",
+    method:GET
+  })
+}
+export  const  getAllMatchPropertys=()=>{
+  return request({
+    url:"/empi/config/property/all",
+    method:GET
+  })
+}
